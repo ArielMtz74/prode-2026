@@ -1,0 +1,429 @@
+import os
+import streamlit as st
+import pandas as pd
+from sqlalchemy.orm import Session
+from models import SessionLocal, User, Match, Prediction, init_db, SystemConfig
+from auth import hash_password, check_password
+import base64
+from fpdf import FPDF
+
+# Inicializar BD
+init_db()
+db_init = SessionLocal()
+try:
+    if db_init.query(Match).count() == 0:
+        from reset_db import reset_and_seed
+        reset_and_seed()
+except Exception as e:
+    pass
+finally:
+    db_init.close()
+
+def is_tournament_locked():
+    db = SessionLocal()
+    locked = False
+    try:
+        conf = db.query(SystemConfig).filter_by(key="tournament_locked").first()
+        if conf and conf.value == "true":
+            locked = True
+    finally:
+        db.close()
+    return locked
+
+# --- CONFIGURACIÓN DE LA PÁGINA ---
+st.set_page_config(page_title="Prode Mundial 2026", page_icon="⚽", layout="wide")
+
+# --- CARGAR ESTILOS CSS ---
+def load_css():
+    try:
+        with open("styles.css", "r") as f:
+            st.markdown(f'<style>{f.read()}</style>', unsafe_allow_html=True)
+    except FileNotFoundError:
+        pass
+
+load_css()
+
+# --- MANEJO DE ESTADO (SESSION STATE) ---
+if "user_id" not in st.session_state:
+    st.session_state.user_id = None
+if "username" not in st.session_state:
+    st.session_state.username = None
+if "is_admin" not in st.session_state:
+    st.session_state.is_admin = False
+
+# --- BASE DE DATOS ---
+def get_db():
+    db = SessionLocal()
+    try:
+        return db
+    finally:
+        pass # Streamlit caches might cause issues if we close too early, but we should manage per request.
+
+# --- PANTALLA DE LOGIN / REGISTRO ---
+def login_screen():
+    st.markdown("<h1 style='text-align: center; color: #00f2fe;'>🏆 Prode Mundial 2026</h1>", unsafe_allow_html=True)
+    
+    col1, col2, col3 = st.columns([1, 2, 1])
+    with col2:
+        tab1, tab2 = st.tabs(["Ingresar", "Registrarse"])
+        
+        with tab1:
+            st.subheader("Iniciar Sesión")
+            with st.form("login_form"):
+                username = st.text_input("Usuario")
+                password = st.text_input("Contraseña", type="password")
+                submit = st.form_submit_button("Ingresar")
+                
+                if submit:
+                    db = SessionLocal()
+                    user = db.query(User).filter(User.username == username).first()
+                    if user and check_password(password, user.password_hash):
+                        st.session_state.user_id = user.id
+                        st.session_state.username = user.username
+                        st.session_state.is_admin = user.is_admin
+                        st.rerun()
+                    else:
+                        st.error("Usuario o contraseña incorrectos.")
+                    db.close()
+        
+        with tab2:
+            st.subheader("Crear Cuenta")
+            with st.form("signup_form"):
+                new_username = st.text_input("Nuevo Usuario")
+                new_password = st.text_input("Contraseña", type="password")
+                # El primer usuario que se registre será admin por defecto para pruebas
+                submit_reg = st.form_submit_button("Registrarse")
+                
+                if submit_reg:
+                    if len(new_username) < 3 or len(new_password) < 4:
+                        st.error("Usuario (>3) y contraseña (>4) deben ser más largos.")
+                    else:
+                        db = SessionLocal()
+                        existing = db.query(User).filter(User.username == new_username).first()
+                        if existing:
+                            st.error("El usuario ya existe.")
+                        else:
+                            is_first_user = db.query(User).count() == 0
+                            hashed_pw = hash_password(new_password)
+                            new_user = User(username=new_username, password_hash=hashed_pw, is_admin=is_first_user)
+                            db.add(new_user)
+                            db.commit()
+                            st.success("Cuenta creada exitosamente. Ya puedes ingresar.")
+                        db.close()
+
+# --- LÓGICA DE PUNTOS ---
+def calculate_points(pred_a, pred_b, res_a, res_b):
+    if pred_a == res_a and pred_b == res_b:
+        return 3
+    
+    pred_trend = "A" if pred_a > pred_b else "B" if pred_b > pred_a else "TIE"
+    res_trend = "A" if res_a > res_b else "B" if res_b > res_a else "TIE"
+    
+    if pred_trend == res_trend:
+        return 1
+    return 0
+
+# --- PANTALLAS PRINCIPALES ---
+def dashboard_screen():
+    st.header("🏅 Ranking en Vivo")
+    db = SessionLocal()
+    
+    # Obtener usuarios y sus puntos
+    users = db.query(User).all()
+    ranking_data = []
+    
+    for u in users:
+        total_points = 0
+        exact_matches = 0
+        predictions = db.query(Prediction).filter(Prediction.user_id == u.id).all()
+        for p in predictions:
+            total_points += p.points
+            if p.points == 3:
+                exact_matches += 1
+        ranking_data.append({"Usuario": u.username, "Puntos": total_points, "Aciertos Exactos": exact_matches})
+    
+    db.close()
+    
+    if ranking_data:
+        df = pd.DataFrame(ranking_data).sort_values(by=["Puntos", "Aciertos Exactos", "Usuario"], ascending=[False, False, True]).reset_index(drop=True)
+        df.index += 1
+        
+        # Podio
+        if len(df) > 0:
+            st.markdown("<h3 style='text-align: center; margin-bottom: 0;'>🏆 El Podio</h3>", unsafe_allow_html=True)
+            p1_name = df.iloc[0]["Usuario"]
+            p1_pts = df.iloc[0]["Puntos"]
+            p2_name = df.iloc[1]["Usuario"] if len(df) > 1 else ""
+            p2_pts = df.iloc[1]["Puntos"] if len(df) > 1 else ""
+            p3_name = df.iloc[2]["Usuario"] if len(df) > 2 else ""
+            p3_pts = df.iloc[2]["Puntos"] if len(df) > 2 else ""
+            
+            podium_html = f"""
+            <div class="podium-container">
+                <div class="podium-step step-2" style="visibility: {'visible' if p2_name else 'hidden'}">
+                    <div class="medal">🥈</div>
+                    <div class="name">{p2_name}</div>
+                    <div class="points">{p2_pts} pts</div>
+                </div>
+                <div class="podium-step step-1">
+                    <div class="medal">🥇</div>
+                    <div class="name">{p1_name}</div>
+                    <div class="points">{p1_pts} pts</div>
+                </div>
+                <div class="podium-step step-3" style="visibility: {'visible' if p3_name else 'hidden'}">
+                    <div class="medal">🥉</div>
+                    <div class="name">{p3_name}</div>
+                    <div class="points">{p3_pts} pts</div>
+                </div>
+            </div>
+            """
+            st.markdown(podium_html, unsafe_allow_html=True)
+        
+        st.markdown("### 📋 Tabla Completa")
+        st.dataframe(df, use_container_width=True)
+        
+        if is_tournament_locked():
+            st.markdown("---")
+            st.markdown("### 🔍 Ver pronósticos de otros participantes")
+            st.write("El torneo ha comenzado. Ahora puedes ver las predicciones de todos los jugadores.")
+            
+            usernames = sorted([u.username for u in users])
+            selected_username = st.selectbox("Selecciona un participante:", ["-- Seleccionar --"] + usernames)
+            
+            if selected_username and selected_username != "-- Seleccionar --":
+                target_user = next((u for u in users if u.username == selected_username), None)
+                if target_user:
+                    target_preds = db.query(Prediction).filter(Prediction.user_id == target_user.id).all()
+                    target_preds_dict = {p.match_id: p for p in target_preds}
+                    matches = db.query(Match).order_by(Match.date).all()
+                    
+                    pred_data = []
+                    for m in matches:
+                        p = target_preds_dict.get(m.id)
+                        pred_a = p.pred_a if p else 0
+                        pred_b = p.pred_b if p else 0
+                        puntos = p.points if p else 0
+                        
+                        resultado_real = f"{m.result_a} - {m.result_b}" if m.status == 'finished' else "Pendiente"
+                        pred_data.append({
+                            "Fecha": m.date.strftime('%d/%m'),
+                            "Grupo": m.group,
+                            "Partido": f"{m.team_a} vs {m.team_b}",
+                            "Su Pronóstico": f"{pred_a} - {pred_b}",
+                            "Resultado Real": resultado_real,
+                            "Puntos": puntos
+                        })
+                    
+                    st.dataframe(pd.DataFrame(pred_data), use_container_width=True)
+
+    else:
+        st.info("Aún no hay participantes en el ranking.")
+
+def predictions_screen():
+    st.header("📝 Mis Pronósticos")
+    locked = is_tournament_locked()
+    if locked:
+        st.error("🚨 El torneo ha comenzado. Los pronósticos están BLOQUEADOS y ya no pueden modificarse.")
+    else:
+        st.write("Carga tus predicciones para la fase de grupos. Una vez que el partido inicie, no podrás modificarlos.")
+    
+    db = SessionLocal()
+    matches = db.query(Match).order_by(Match.date).all()
+    user_preds = db.query(Prediction).filter(Prediction.user_id == st.session_state.user_id).all()
+    preds_dict = {p.match_id: p for p in user_preds}
+    
+    groups = {}
+    for m in matches:
+        if m.group not in groups:
+            groups[m.group] = []
+        groups[m.group].append(m)
+    
+    tabs = st.tabs([f"Grupo {g}" for g in sorted(groups.keys())])
+    
+    for i, group_name in enumerate(sorted(groups.keys())):
+        with tabs[i]:
+            for m in groups[group_name]:
+                # Verificar si el partido ya inició (mock: asume status) o si el torneo está bloqueado globalmente
+                is_disabled = m.status == "finished" or locked
+                
+                existing_pred = preds_dict.get(m.id)
+                default_a = existing_pred.pred_a if existing_pred else 0
+                default_b = existing_pred.pred_b if existing_pred else 0
+                
+                with st.container():
+                    st.markdown(f"""
+                    <div style="text-align: center; color: #a0aec0; font-size: 0.85rem; margin-bottom: 10px; margin-top: 15px;">
+                        📅 {m.date.strftime('%d/%m/%Y')} &nbsp;•&nbsp; ⏰ {m.time} &nbsp;•&nbsp; 🏟️ {m.stadium}
+                    </div>
+                    """, unsafe_allow_html=True)
+                    st.markdown(f'<div class="match-card">', unsafe_allow_html=True)
+                    cols = st.columns([3, 1, 1, 1, 3])
+                    cols[0].markdown(f"<div style='text-align: right;' class='team-name'>{m.team_a} <span style='font-size:0.75rem; color:#888; font-weight:normal;'>({m.flag_a})</span></div>", unsafe_allow_html=True)
+                    
+                    val_a = cols[1].number_input("##", min_value=0, max_value=20, value=default_a, key=f"a_{m.id}", disabled=is_disabled, label_visibility="collapsed")
+                    cols[2].markdown("<div style='text-align: center; font-size: 24px; font-weight: bold;'>-</div>", unsafe_allow_html=True)
+                    val_b = cols[3].number_input("##", min_value=0, max_value=20, value=default_b, key=f"b_{m.id}", disabled=is_disabled, label_visibility="collapsed")
+                    
+                    cols[4].markdown(f"<div style='text-align: left;' class='team-name'><span style='font-size:0.75rem; color:#888; font-weight:normal;'>({m.flag_b})</span> {m.team_b}</div>", unsafe_allow_html=True)
+                    st.markdown('</div>', unsafe_allow_html=True)
+                    
+                    # Guardar automáticamente al cambiar (en un entorno real, mejor usar un botón de guardado por grupo)
+                    if not is_disabled:
+                        if existing_pred:
+                            if existing_pred.pred_a != val_a or existing_pred.pred_b != val_b:
+                                existing_pred.pred_a = val_a
+                                existing_pred.pred_b = val_b
+                                db.commit()
+                        else:
+                            if val_a != 0 or val_b != 0: # Para no guardar todos los 0-0 automáticamente
+                                new_pred = Prediction(user_id=st.session_state.user_id, match_id=m.id, pred_a=val_a, pred_b=val_b)
+                                db.add(new_pred)
+                                db.commit()
+                                preds_dict[m.id] = new_pred
+    
+    st.markdown("---")
+    st.subheader("📄 Descargar Mis Pronósticos")
+    st.write("Genera un archivo PDF con todos los pronósticos que has cargado hasta ahora.")
+    
+    # We create the PDF when the user asks
+    pdf = FPDF()
+    pdf.add_page()
+    pdf.set_font("helvetica", "B", 16)
+    pdf.cell(0, 10, f"Pronosticos de {st.session_state.username} - Prode Mundial 2026", new_x="LMARGIN", new_y="NEXT", align="C")
+    pdf.ln(5)
+    
+    pdf.set_font("helvetica", "", 12)
+    for m in matches:
+        p = preds_dict.get(m.id)
+        pred_text = f"{p.pred_a} - {p.pred_b}" if p else "No cargado"
+        line = f"{m.date.strftime('%d/%m')} | Grupo {m.group} | {m.team_a} vs {m.team_b} -> Pronostico: {pred_text}"
+        pdf.cell(0, 8, line, new_x="LMARGIN", new_y="NEXT")
+        
+    pdf_bytes = bytes(pdf.output())
+    
+    st.download_button(
+        label="⬇️ Descargar Archivo PDF",
+        data=pdf_bytes,
+        file_name=f"pronosticos_{st.session_state.username}.pdf",
+        mime="application/pdf"
+    )
+
+    db.close()
+
+def admin_screen():
+    st.header("⚙️ Panel de Administrador")
+    
+    st.markdown("### Control del Torneo")
+    locked = is_tournament_locked()
+    if locked:
+        st.warning("🔒 El torneo está actualmente BLOQUEADO. Nadie puede editar sus pronósticos.")
+        if st.button("🔓 Desbloquear Torneo (Permitir Edición)"):
+            db = SessionLocal()
+            conf = db.query(SystemConfig).filter_by(key="tournament_locked").first()
+            if conf:
+                conf.value = "false"
+            db.commit()
+            db.close()
+            st.rerun()
+    else:
+        st.success("🔓 El torneo está ABIERTO. Los usuarios pueden editar sus pronósticos.")
+        if st.button("🔒 Bloquear Torneo (Cerrar Pronósticos)"):
+            db = SessionLocal()
+            conf = db.query(SystemConfig).filter_by(key="tournament_locked").first()
+            if not conf:
+                conf = SystemConfig(key="tournament_locked", value="true")
+                db.add(conf)
+            else:
+                conf.value = "true"
+            db.commit()
+            db.close()
+            st.rerun()
+            
+    st.markdown("---")
+    st.markdown("### Reseteo de Contraseña")
+    st.write("Si un usuario olvidó su contraseña, puedes asignarle una nueva.")
+    db = SessionLocal()
+    all_users = db.query(User).order_by(User.username).all()
+    user_names = [u.username for u in all_users]
+    selected_user_to_reset = st.selectbox("Seleccionar Usuario", ["-- Seleccionar --"] + user_names)
+    new_pwd = st.text_input("Nueva Contraseña", type="password")
+    if st.button("Resetear Contraseña"):
+        if selected_user_to_reset != "-- Seleccionar --" and len(new_pwd) >= 4:
+            user_to_mod = db.query(User).filter_by(username=selected_user_to_reset).first()
+            if user_to_mod:
+                user_to_mod.password_hash = hash_password(new_pwd)
+                db.commit()
+                st.success(f"Contraseña de {selected_user_to_reset} actualizada.")
+        else:
+            st.error("Selecciona un usuario y una contraseña de al menos 4 caracteres.")
+    db.close()
+            
+    st.markdown("---")
+    st.markdown("### Cargar Resultados")
+    st.write("Carga los resultados reales de los partidos para actualizar el ranking.")
+    
+    db = SessionLocal()
+    matches = db.query(Match).order_by(Match.date).all()
+    
+    for m in matches:
+        with st.expander(f"[{m.group}] {m.team_a} {m.flag_a} vs {m.flag_b} {m.team_b} - Estado: {m.status}"):
+            with st.form(f"form_match_{m.id}"):
+                cols = st.columns(2)
+                res_a = cols[0].number_input(m.team_a, min_value=0, value=m.result_a if m.result_a is not None else 0)
+                res_b = cols[1].number_input(m.team_b, min_value=0, value=m.result_b if m.result_b is not None else 0)
+                
+                submitted = st.form_submit_button("Guardar Resultado FInal")
+                if submitted:
+                    m.result_a = res_a
+                    m.result_b = res_b
+                    m.status = "finished"
+                    
+                    # Actualizar puntos de todos los usuarios
+                    users = db.query(User).all()
+                    predictions = db.query(Prediction).filter(Prediction.match_id == m.id).all()
+                    pred_dict = {p.user_id: p for p in predictions}
+                    
+                    for u in users:
+                        p = pred_dict.get(u.id)
+                        if p:
+                            p.points = calculate_points(p.pred_a, p.pred_b, res_a, res_b)
+                        else:
+                            # Crear predicción implícita de 0-0 si no la habían guardado
+                            pts = calculate_points(0, 0, res_a, res_b)
+                            new_p = Prediction(user_id=u.id, match_id=m.id, pred_a=0, pred_b=0, points=pts)
+                            db.add(new_p)
+                    
+                    db.commit()
+                    st.success("Resultado guardado y puntos actualizados.")
+                    st.rerun()
+    db.close()
+
+# --- NAVEGACIÓN PRINCIPAL ---
+if st.session_state.user_id is None:
+    login_screen()
+else:
+    # Header minimalista con logout
+    col1, col2 = st.columns([8, 1])
+    col1.markdown(f"**Bienvenido, {st.session_state.username}**")
+    if col2.button("Salir"):
+        st.session_state.user_id = None
+        st.session_state.username = None
+        st.session_state.is_admin = False
+        st.rerun()
+    
+    st.markdown("---")
+    
+    tabs_names = ["🏅 Dashboard", "📝 Mis Pronósticos"]
+    if st.session_state.is_admin:
+        tabs_names.append("⚙️ Admin")
+        
+    app_tabs = st.tabs(tabs_names)
+    
+    with app_tabs[0]:
+        dashboard_screen()
+    with app_tabs[1]:
+        predictions_screen()
+    if st.session_state.is_admin:
+        with app_tabs[2]:
+            admin_screen()
+

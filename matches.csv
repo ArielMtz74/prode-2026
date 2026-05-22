@@ -1,0 +1,73 @@
+Grupo,Equipo Local,Bandera Local,Equipo Visitante,Bandera Visitante,Fecha,Hora,Estadio
+A,México,🇲🇽,Sudáfrica,🇿🇦,11/06/2026,15:00,Estadio Ciudad de México
+A,Corea del Sur,🇰🇷,Chequia,🇨🇿,11/06/2026,22:00,Estadio Akron (Guadalajara)
+B,Canadá,🇨🇦,Bosnia y Herzegovina,🇧🇦,12/06/2026,15:00,Estadio Toronto
+D,Estados Unidos,🇺🇸,Paraguay,🇵🇾,12/06/2026,21:00,SoFi Stadium (Los Ángeles)
+B,Qatar,🇶🇦,Suiza,🇨🇭,13/06/2026,15:00,Levi's Stadium (San Francisco)
+C,Brasil,🇧🇷,Marruecos,🇲🇦,13/06/2026,18:00,MetLife Stadium (Nueva York/Nueva Jersey)
+C,Haití,🇭🇹,Escocia,🏴󠁧󠁢󠁳󠁣󠁴󠁿,13/06/2026,21:00,Estadio Boston
+D,Australia,🇦🇺,Turquía,🇹🇷,14/06/2026,00:00,BC Place (Vancouver)
+E,Alemania,🇩🇪,Curazao,🇨🇼,14/06/2026,13:00,Estadio Houston
+F,Países Bajos,🇳🇱,Japón,🇯🇵,14/06/2026,16:00,AT&T Stadium (Dallas)
+E,Costa de Marfil,🇨🇮,Ecuador,🇪🇨,14/06/2026,19:00,Lincoln Financial Field (Filadelfia)
+F,Suecia,🇸🇪,Túnez,🇹🇳,14/06/2026,22:00,Estadio Monterrey
+H,España,🇪🇸,Cabo Verde,🇨🇻,15/06/2026,12:00,Mercedes-Benz Stadium (Atlanta)
+G,Bélgica,🇧🇪,Egipto,🇪🇬,15/06/2026,15:00,Lumen Field (Seattle)
+H,Arabia Saudita,🇸🇦,Uruguay,🇺🇾,15/06/2026,18:00,Hard Rock Stadium (Miami)
+G,Irán,🇮🇷,Nueva Zelanda,🇳🇿,15/06/2026,21:00,SoFi Stadium (Los Ángeles)
+I,Francia,🇫🇷,Senegal,🇸🇳,16/06/2026,15:00,MetLife Stadium (Nueva York/Nueva Jersey)
+I,Irak,🇮🇶,Noruega,🇳🇴,16/06/2026,18:00,Estadio Boston
+J,Argentina,🇦🇷,Argelia,🇩🇿,16/06/2026,21:00,Arrowhead Stadium (Kansas City)
+J,Austria,🇦🇹,Jordania,🇯🇴,16/06/2026,00:00,Levi's Stadium (San Francisco)
+K,Portugal,🇵🇹,República Democrática del Congo,🇨🇩,17/06/2026,13:00,Estadio Houston
+L,Inglaterra,🏴󠁧󠁢󠁥󠁮󠁧󠁿,Croacia,🇭🇷,17/06/2026,16:00,AT&T Stadium (Dallas)
+L,Ghana,🇬🇭,Panamá,🇵🇦,17/06/2026,19:00,Estadio Toronto
+K,Uzbekistán,🇺🇿,Colombia,🇨🇴,17/06/2026,22:00,Estadio Ciudad de México
+A,Chequia,🇨🇿,Sudáfrica,🇿🇦,18/06/2026,12:00,Mercedes-Benz Stadium (Atlanta)
+B,Suiza,🇨🇭,Bosnia y Herzegovina,🇧🇦,18/06/2026,15:00,SoFi Stadium (Los Ángeles)
+B,Canadá,🇨🇦,Qatar,🇶🇦,18/06/2026,18:00,BC Place (Vancouver)
+A,México,🇲🇽,Corea del Sur,🇰🇷,18/06/2026,21:00,Estadio Akron (Guadalajara)
+D,Estados Unidos,🇺🇸,Australia,🇦🇺,19/06/2026,15:00,Lumen Field (Seattle)
+C,Escocia,🏴󠁧󠁢󠁳󠁣󠁴󠁿,Marruecos,🇲🇦,19/06/2026,18:00,Estadio Boston
+C,Brasil,🇧🇷,Haití,🇭🇹,19/06/2026,20:30,Lincoln Financial Field (Filadelfia)
+D,Turquía,🇹🇷,Paraguay,🇵🇾,19/06/2026,23:00,Levi's Stadium (San Francisco)
+F,Países Bajos,🇳🇱,Suecia,🇸🇪,20/06/2026,13:00,Estadio Houston
+E,Alemania,🇩🇪,Costa de Marfil,🇨🇮,20/06/2026,16:00,Estadio Toronto
+E,Ecuador,🇪🇨,Curazao,🇨🇼,20/06/2026,20:00,Arrowhead Stadium (Kansas City)
+F,Túnez,🇹🇳,Japón,🇯🇵,21/06/2026,00:00,Estadio Monterrey
+H,España,🇪🇸,Arabia Saudita,🇸🇦,21/06/2026,12:00,Mercedes-Benz Stadium (Atlanta)
+G,Bélgica,🇧🇪,Irán,🇮🇷,21/06/2026,15:00,SoFi Stadium (Los Ángeles)
+H,Uruguay,🇺🇾,Cabo Verde,🇨🇻,21/06/2026,18:00,Hard Rock Stadium (Miami)
+G,Nueva Zelanda,🇳🇿,Egipto,🇪🇬,21/06/2026,21:00,BC Place (Vancouver)
+J,Argentina,🇦🇷,Austria,🇦🇹,22/06/2026,13:00,AT&T Stadium (Dallas)
+I,Francia,🇫🇷,Irak,🇮🇶,22/06/2026,17:00,Lincoln Financial Field (Filadelfia)
+I,Noruega,🇳🇴,Senegal,🇸🇳,22/06/2026,20:00,MetLife Stadium (Nueva York/Nueva Jersey)
+J,Jordania,🇯🇴,Argelia,🇩🇿,22/06/2026,23:00,Levi's Stadium (San Francisco)
+K,Portugal,🇵🇹,Uzbekistán,🇺🇿,23/06/2026,13:00,Estadio Houston
+L,Inglaterra,🏴󠁧󠁢󠁥󠁮󠁧󠁿,Ghana,🇬🇭,23/06/2026,16:00,Estadio Boston
+L,Panamá,🇵🇦,Croacia,🇭🇷,23/06/2026,19:00,Estadio Toronto
+K,Colombia,🇨🇴,República Democrática del Congo,🇨🇩,23/06/2026,22:00,Estadio Akron (Guadalajara)
+B,Suiza,🇨🇭,Canadá,🇨🇦,24/06/2026,15:00,BC Place (Vancouver)
+B,Bosnia y Herzegovina,🇧🇦,Qatar,🇶🇦,24/06/2026,15:00,Lumen Field (Seattle)
+C,Escocia,🏴󠁧󠁢󠁳󠁣󠁴󠁿,Brasil,🇧🇷,24/06/2026,18:00,Hard Rock Stadium (Miami)
+C,Marruecos,🇲🇦,Haití,🇭🇹,24/06/2026,18:00,Mercedes-Benz Stadium (Atlanta)
+A,Chequia,🇨🇿,México,🇲🇽,24/06/2026,21:00,Estadio Ciudad de México
+A,Sudáfrica,🇿🇦,Corea del Sur,🇰🇷,24/06/2026,21:00,Estadio Monterrey
+E,Curazao,🇨🇼,Costa de Marfil,🇨🇮,25/06/2026,16:00,Lincoln Financial Field (Filadelfia)
+E,Ecuador,🇪🇨,Alemania,🇩🇪,25/06/2026,16:00,MetLife Stadium (Nueva York/Nueva Jersey)
+F,Japón,🇯🇵,Suecia,🇸🇪,25/06/2026,19:00,AT&T Stadium (Dallas)
+F,Túnez,🇹🇳,Países Bajos,🇳🇱,25/06/2026,19:00,Arrowhead Stadium (Kansas City)
+D,Turquía,🇹🇷,Estados Unidos,🇺🇸,25/06/2026,22:00,SoFi Stadium (Los Ángeles)
+D,Paraguay,🇵🇾,Australia,🇦🇺,25/06/2026,22:00,Levi's Stadium (San Francisco)
+I,Noruega,🇳🇴,Francia,🇫🇷,26/06/2026,15:00,Estadio Boston
+I,Senegal,🇸🇳,Irak,🇮🇶,26/06/2026,15:00,Estadio Toronto
+H,Cabo Verde,🇨🇻,Arabia Saudita,🇸🇦,26/06/2026,20:00,Estadio Houston
+H,Uruguay,🇺🇾,España,🇪🇸,26/06/2026,20:00,Estadio Akron (Guadalajara)
+G,Egipto,🇪🇬,Irán,🇮🇷,26/06/2026,23:00,Lumen Field (Seattle)
+G,Nueva Zelanda,🇳🇿,Bélgica,🇧🇪,26/06/2026,23:00,BC Place (Vancouver)
+L,Panamá,🇵🇦,Inglaterra,🏴󠁧󠁢󠁥󠁮󠁧󠁿,27/06/2026,17:00,MetLife Stadium (Nueva York/Nueva Jersey)
+L,Croacia,🇭🇷,Ghana,🇬🇭,27/06/2026,17:00,Lincoln Financial Field (Filadelfia)
+K,Colombia,🇨🇴,Portugal,🇵🇹,27/06/2026,19:30,Hard Rock Stadium (Miami)
+K,República Democrática del Congo,🇨🇩,Uzbekistán,🇺🇿,27/06/2026,19:30,Mercedes-Benz Stadium (Atlanta)
+J,Argelia,🇩🇿,Austria,🇦🇹,27/06/2026,22:00,Arrowhead Stadium (Kansas City)
+J,Jordania,🇯🇴,Argentina,🇦🇷,27/06/2026,22:00,AT&T Stadium (Dallas)
