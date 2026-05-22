@@ -49,7 +49,11 @@ class SystemConfig(Base):
     value = Column(String(200), nullable=False)
 
 # Setup Database
-DB_PATH = os.environ.get("DATABASE_URL", "sqlite:///prode_v2.db")
+try:
+    import streamlit as st
+    DB_PATH = st.secrets["DATABASE_URL"]
+except Exception:
+    DB_PATH = os.environ.get("DATABASE_URL", "sqlite:///prode_v2.db")
 engine = create_engine(DB_PATH)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
