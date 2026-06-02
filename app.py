@@ -6,7 +6,7 @@ from models import SessionLocal, User, Match, Prediction, init_db, SystemConfig
 from auth import hash_password, check_password
 import base64
 from fpdf import FPDF
-
+ 
 # Inicializar BD
 init_db()
 db_init = SessionLocal()
@@ -18,7 +18,7 @@ except Exception as e:
     pass
 finally:
     db_init.close()
-
+ 
 def is_tournament_locked():
     db = SessionLocal()
     locked = False
@@ -29,10 +29,10 @@ def is_tournament_locked():
     finally:
         db.close()
     return locked
-
+ 
 # --- CONFIGURACIÓN DE LA PÁGINA ---
 st.set_page_config(page_title="Prode Mundial 2026", page_icon="⚽", layout="wide")
-
+ 
 # --- CARGAR ESTILOS CSS ---
 def load_css():
     try:
@@ -40,9 +40,9 @@ def load_css():
             st.markdown(f'<style>{f.read()}</style>', unsafe_allow_html=True)
     except FileNotFoundError:
         pass
-
+ 
 load_css()
-
+ 
 # --- MANEJO DE ESTADO (SESSION STATE) ---
 if "user_id" not in st.session_state:
     st.session_state.user_id = None
@@ -50,7 +50,7 @@ if "username" not in st.session_state:
     st.session_state.username = None
 if "is_admin" not in st.session_state:
     st.session_state.is_admin = False
-
+ 
 # --- BASE DE DATOS ---
 def get_db():
     db = SessionLocal()
@@ -58,7 +58,50 @@ def get_db():
         return db
     finally:
         pass # Streamlit caches might cause issues if we close too early, but we should manage per request.
-
+ 
+# --- TEXTO DE TÉRMINOS Y CONDICIONES ---
+TERMS_AND_CONDITIONS = """
+🏆 REGLAMENTO OFICIAL: PRODE MUNDIAL 2026 🏆
+ 
+¡Bienvenidos al Prode! Para que todo sea transparente, competitivo y, sobre todo, divertido, establecemos las siguientes bases y condiciones que todos los participantes aceptan al ingresar.
+ 
+1. Costo de Inscripción y Validación
+• Valor: El costo para participar es de $10.000.
+• Fecha límite de pago: Se recibe el dinero hasta el 05/06 inclusive.
+• Fecha límite de carga: Los pronósticos se pueden cargar/modificar hasta el día anterior al comienzo del partido inaugural.
+• Cierre estricto: Una vez cumplidas estas fechas, el Prode se "cierra". Solo participarán quienes hayan abonado en término. Si alguien pagó pero olvidó completar sus pronósticos, es su total responsabilidad y no habrá excepciones.
+ 
+2. Transparencia Total 👁️
+Para garantizar la máxima transparencia y evitar suspicacias, el Prode de todos los participantes estará visible públicamente a partir del pitazo inicial del partido inaugural.
+De esta manera, todos podrán ir controlando los puntos y los pronósticos de los demás en tiempo real.
+ 
+3. Alcance del Torneo y Sistema de Puntuación
+El Prode aplica únicamente para la Fase de Grupos (los primeros 72 partidos del torneo). Los partidos se puntúan de la siguiente manera:
+• 1 Punto: Por acertar el resultado básico (si gana el Local, hay Empate, o gana el Visitante).
+• 2 Puntos Extra: Por acertar el resultado exacto en goles (ej: pronosticaste 2-1 y el partido termina 2-1).
+Ejemplo: Si apostás que gana el Local 2-1 y el partido termina 2-1, sumás 3 puntos en total (1 por el ganador + 2 por el resultado exacto). Si el partido termina 1-0, sumás solo 1 punto.
+ 
+4. Reparto de Premios y Criterio de Desempate 💰
+Finalizado el último partido de la Fase de Grupos, se calculará la tabla final. Todo lo recaudado se distribuirá de la siguiente manera:
+• 1° Puesto: 50% de la recaudación total.
+• 2° Puesto: 30% de la recaudación total.
+• 3° Puesto: 20% de la recaudación total.
+Cláusula de Empates: Si dos o más participantes empatan en puntos en alguna de las posiciones de premio, se dividirá el dinero en partes iguales, pero afectando únicamente el porcentaje asignado a ese puesto.
+Ejemplo: Si hay un único 1° Puesto (se lleva el 50%) y un único 2° Puesto (se lleva el 30%), pero hay dos personas empatadas en el 3° Puesto, ese 20% se divide en partes iguales entre esos dos participantes (10% para cada uno).
+(Nota: Si el empate ocurre en el 1° puesto entre dos personas, se fusionan los premios del 1° y 2° puesto [50%+30% = 80%] y se divide 40% para cada uno, quedando el de atrás como 3°).
+ 
+5. Política de Reembolso
+Sin derecho a réplica: No hay reembolso de dinero bajo ninguna circunstancia. Si tus predicciones son malas, la pelota no entra o la suerte no te acompaña... a "llorar al campito". El dinero ya forma parte del pozo de premios.
+ 
+⚠️ Puntos extra (¡Para tener en cuenta!)
+ 
+6. Partidos Suspendidos o Postergados: Si un partido de la fase de grupos se suspende, se posterga o se cancela oficialmente por la FIFA y no se juega dentro de las 48 horas posteriores a su fecha original, dicho partido quedará anulado para el Prode y nadie sumará puntos por él.
+ 
+7. Resultados Oficiales: Los resultados válidos para la puntuación serán los oficiales determinados por la FIFA al finalizar el partido. Cualquier escritorio, reclamo posterior o sanción que cambie el resultado días después no será tenido en cuenta para el conteo del Prode.
+ 
+8. Modificaciones: El administrador se reserva el derecho de resolver cualquier situación gris o vacío legal no contemplado en este reglamento, siempre actuando bajo el principio de la buena fe y la justicia para el grupo.
+"""
+ 
 # --- PANTALLA DE LOGIN / REGISTRO ---
 def login_screen():
     st.markdown("<h1 style='text-align: center; color: #00f2fe;'>🏆 Prode Mundial 2026</h1>", unsafe_allow_html=True)
@@ -92,10 +135,13 @@ def login_screen():
                 new_username = st.text_input("Nuevo Usuario")
                 new_password = st.text_input("Contraseña", type="password")
                 # El primer usuario que se registre será admin por defecto para pruebas
+                accept_terms = st.checkbox("Acepto el Reglamento Oficial del Prode Mundial 2026")
                 submit_reg = st.form_submit_button("Registrarse")
                 
                 if submit_reg:
-                    if len(new_username) < 3 or len(new_password) < 4:
+                    if not accept_terms:
+                        st.error("Debes aceptar el Reglamento Oficial para registrarte.")
+                    elif len(new_username) < 3 or len(new_password) < 4:
                         st.error("Usuario (>3) y contraseña (>4) deben ser más largos.")
                     else:
                         db = SessionLocal()
@@ -110,7 +156,11 @@ def login_screen():
                             db.commit()
                             st.success("Cuenta creada exitosamente. Ya puedes ingresar.")
                         db.close()
-
+ 
+            # Link para ver el reglamento completo debajo del formulario
+            with st.expander("📋 Ver Reglamento Oficial completo"):
+                st.text(TERMS_AND_CONDITIONS)
+ 
 # --- LÓGICA DE PUNTOS ---
 def calculate_points(pred_a, pred_b, res_a, res_b):
     if pred_a == res_a and pred_b == res_b:
@@ -122,7 +172,7 @@ def calculate_points(pred_a, pred_b, res_a, res_b):
     if pred_trend == res_trend:
         return 1
     return 0
-
+ 
 # --- PANTALLAS PRINCIPALES ---
 def dashboard_screen():
     st.header("🏅 Ranking en Vivo")
@@ -215,10 +265,10 @@ def dashboard_screen():
                         })
                     
                     st.dataframe(pd.DataFrame(pred_data), use_container_width=True)
-
+ 
     else:
         st.info("Aún no hay participantes en el ranking.")
-
+ 
 def predictions_screen():
     st.header("📝 Mis Pronósticos")
     locked = is_tournament_locked()
@@ -307,9 +357,9 @@ def predictions_screen():
         file_name=f"pronosticos_{st.session_state.username}.pdf",
         mime="application/pdf"
     )
-
+ 
     db.close()
-
+ 
 def admin_screen():
     st.header("⚙️ Panel de Administrador")
     
@@ -338,7 +388,33 @@ def admin_screen():
             db.commit()
             db.close()
             st.rerun()
-            
+ 
+    st.markdown("---")
+    st.markdown("### 🗑️ Dar de Baja a un Participante")
+    st.write("Elimina un usuario y todos sus pronósticos. Esta acción es irreversible.")
+    
+    db = SessionLocal()
+    all_users = db.query(User).order_by(User.username).all()
+    # No permitir eliminar al propio admin logueado
+    deletable_users = [u for u in all_users if u.id != st.session_state.user_id]
+    delete_names = [u.username for u in deletable_users]
+ 
+    selected_user_to_delete = st.selectbox("Seleccionar usuario a dar de baja", ["-- Seleccionar --"] + delete_names, key="delete_user_select")
+    
+    if selected_user_to_delete != "-- Seleccionar --":
+        st.warning(f"⚠️ ¿Estás seguro que querés eliminar a **{selected_user_to_delete}** y todos sus pronósticos?")
+        if st.button("🗑️ Confirmar Baja", type="primary"):
+            user_to_delete = db.query(User).filter_by(username=selected_user_to_delete).first()
+            if user_to_delete:
+                # Primero eliminar todos sus pronósticos
+                db.query(Prediction).filter_by(user_id=user_to_delete.id).delete()
+                # Luego eliminar el usuario
+                db.delete(user_to_delete)
+                db.commit()
+                st.success(f"✅ Usuario {selected_user_to_delete} y sus pronósticos fueron eliminados correctamente.")
+                st.rerun()
+    db.close()
+ 
     st.markdown("---")
     st.markdown("### Reseteo de Contraseña")
     st.write("Si un usuario olvidó su contraseña, puedes asignarle una nueva.")
@@ -397,10 +473,21 @@ def admin_screen():
                     st.success("Resultado guardado y puntos actualizados.")
                     st.rerun()
     db.close()
-
+ 
+# --- FOOTER CON LINK A TÉRMINOS Y CONDICIONES ---
+def show_footer():
+    st.markdown("---")
+    st.markdown(
+        "<div style='text-align: center; color: #666; font-size: 0.85rem;'>⚽ Prode Mundial 2026</div>",
+        unsafe_allow_html=True
+    )
+    with st.expander("📋 Ver Reglamento Oficial"):
+        st.text(TERMS_AND_CONDITIONS)
+ 
 # --- NAVEGACIÓN PRINCIPAL ---
 if st.session_state.user_id is None:
     login_screen()
+    show_footer()
 else:
     # Header minimalista con logout
     col1, col2 = st.columns([8, 1])
@@ -426,4 +513,5 @@ else:
     if st.session_state.is_admin:
         with app_tabs[2]:
             admin_screen()
-
+    
+    show_footer()
