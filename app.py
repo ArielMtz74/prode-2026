@@ -325,11 +325,11 @@ def predictions_screen():
                                 existing_pred.pred_b = val_b
                                 db.commit()
                         else:
-                            if val_a != 0 or val_b != 0: # Para no guardar todos los 0-0 automáticamente
-                                new_pred = Prediction(user_id=st.session_state.user_id, match_id=m.id, pred_a=val_a, pred_b=val_b)
-                                db.add(new_pred)
-                                db.commit()
-                                preds_dict[m.id] = new_pred
+                            # Se elimino el control del 0 a 0 - Para no guardar todos los 0-0 automáticamente
+                            new_pred = Prediction(user_id=st.session_state.user_id, match_id=m.id, pred_a=val_a, pred_b=val_b)
+                            db.add(new_pred)
+                            db.commit()
+                            preds_dict[m.id] = new_pred
     
     st.markdown("---")
     st.subheader("📄 Descargar Mis Pronósticos")
