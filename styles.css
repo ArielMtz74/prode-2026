@@ -219,3 +219,20 @@ label[data-testid="stWidgetLabel"] p {
 [data-testid="stExpander"] details .stMarkdown {
     color: #e2e8f0 !important;
 }
+
+/* Estilos para el importe del premio sobre el podio */
+.podium-step .prize {
+    position: absolute;
+    top: -40px;
+    left: 50%;
+    transform: translateX(-50%);
+    color: #00f2fe; /* Celeste claro brillante */
+    font-weight: 900;
+    font-size: 1.1rem;
+    text-shadow: 1px 1px 4px rgba(0,0,0,0.9);
+    background: rgba(0, 0, 0, 0.5);
+    padding: 3px 10px;
+    border-radius: 12px;
+    border: 1px solid rgba(0, 242, 254, 0.3);
+    white-space: nowrap;
+}
