@@ -207,20 +207,33 @@ def dashboard_screen():
             p2_pts = df.iloc[1]["Puntos"] if len(df) > 1 else ""
             p3_name = df.iloc[2]["Usuario"] if len(df) > 2 else ""
             p3_pts = df.iloc[2]["Puntos"] if len(df) > 2 else ""
+
+            # Cálculo dinámico de premios
+            total_users = len(users)
+            total_pot = total_users * 10000
+            prize_1 = int(total_pot * 0.50)
+            prize_2 = int(total_pot * 0.30)
+            prize_3 = int(total_pot * 0.20)
             
+            def fmt_prize(amount):
+                return f"${amount:,.0f}".replace(",", ".")
+         
             podium_html = f"""
             <div class="podium-container">
                 <div class="podium-step step-2" style="visibility: {'visible' if p2_name else 'hidden'}">
+                    <div class="prize">{fmt_prize(prize_2)}</div>
                     <div class="medal">🥈</div>
                     <div class="name">{p2_name}</div>
                     <div class="points">{p2_pts} pts</div>
                 </div>
                 <div class="podium-step step-1">
+                    <div class="prize">{fmt_prize(prize_1)}</div>
                     <div class="medal">🥇</div>
                     <div class="name">{p1_name}</div>
                     <div class="points">{p1_pts} pts</div>
                 </div>
                 <div class="podium-step step-3" style="visibility: {'visible' if p3_name else 'hidden'}">
+                    <div class="prize">{fmt_prize(prize_3)}</div>
                     <div class="medal">🥉</div>
                     <div class="name">{p3_name}</div>
                     <div class="points">{p3_pts} pts</div>
