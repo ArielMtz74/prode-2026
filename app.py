@@ -448,6 +448,30 @@ def admin_screen():
     db.close()
             
     st.markdown("---")
+    st.markdown("### ✏️ Renombrar Usuario")
+    st.write("Cambia el nombre de un participante. Sus pronósticos y puntos se mantendrán intactos.")
+    db = SessionLocal()
+    all_users = db.query(User).order_by(User.username).all()
+    user_names_rename = [u.username for u in all_users]
+    selected_user_to_rename = st.selectbox("Seleccionar Usuario a renombrar", ["-- Seleccionar --"] + user_names_rename, key="rename_user_select")
+    new_username = st.text_input("Nuevo Nombre de Usuario")
+    if st.button("Guardar Nuevo Nombre"):
+        if selected_user_to_rename != "-- Seleccionar --" and len(new_username) >= 3:
+            existing = db.query(User).filter(User.username == new_username).first()
+            if existing:
+                st.error("Ese nombre de usuario ya está en uso. Elegí otro.")
+            else:
+                user_to_mod = db.query(User).filter_by(username=selected_user_to_rename).first()
+                if user_to_mod:
+                    user_to_mod.username = new_username
+                    db.commit()
+                    st.success(f"✅ El usuario '{selected_user_to_rename}' ahora se llama '{new_username}'.")
+                    st.rerun()
+        else:
+            st.error("Seleccioná un usuario y escribí un nuevo nombre de al menos 3 caracteres.")
+    db.close()
+ 
+    st.markdown("---")
     st.markdown("### Cargar Resultados")
     st.write("Carga los resultados reales de los partidos para actualizar el ranking.")
     
