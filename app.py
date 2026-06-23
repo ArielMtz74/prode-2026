@@ -510,7 +510,94 @@ def admin_screen():
                     st.success("Resultado guardado y puntos actualizados.")
                     st.rerun()
     db.close()
- 
+    
+    st.markdown("---")
+    st.markdown("### 🔍 Auditoría de Puntos")
+    st.write("Herramientas exclusivas para el Administrador para auditar los aciertos y puntajes.")
+    
+    db = SessionLocal()
+    all_users = db.query(User).order_by(User.username).all()
+    user_names_audit = [u.username for u in all_users]
+    
+    # 1. Auditoría individual
+    st.markdown("#### Auditoría Individual por Jugador")
+    selected_audit_user = st.selectbox("Seleccionar Jugador", ["-- Seleccionar --"] + user_names_audit, key="audit_user_select")
+    
+    if selected_audit_user != "-- Seleccionar --":
+        audit_u = db.query(User).filter_by(username=selected_audit_user).first()
+        if audit_u:
+            finished_matches = db.query(Match).filter(Match.status == "finished").order_by(Match.date).all()
+            if not finished_matches:
+                st.info("No hay partidos finalizados aún para auditar.")
+            else:
+                audit_data = []
+                preds = db.query(Prediction).filter(Prediction.user_id == audit_u.id).all()
+                pred_dict_audit = {p.match_id: p for p in preds}
+                
+                for m in finished_matches:
+                    p = pred_dict_audit.get(m.id)
+                    pred_str = f"{p.pred_a} - {p.pred_b}" if p else "Vacío (0 - 0 automático)"
+                    res_str = f"{m.result_a} - {m.result_b}"
+                    puntos = p.points if p else 0
+                    
+                    if puntos == 3:
+                        icon = "🟢 Exacto (3 pts)"
+                    elif puntos == 1:
+                        icon = "🟡 Tendencia (1 pt)"
+                    else:
+                        icon = "🔴 Nada (0 pts)"
+                        
+                    audit_data.append({
+                        "Partido": f"{m.team_a} vs {m.team_b}",
+                        "Su Pronóstico": pred_str,
+                        "Resultado Real": res_str,
+                        "Puntos": icon
+                    })
+                
+                import pandas as pd
+                st.dataframe(pd.DataFrame(audit_data), use_container_width=True)
+                
+    # 2. Exportación General Excel/CSV
+    st.markdown("#### Exportar Auditoría General (Excel/CSV)")
+    st.write("Descarga una planilla con el detalle completo de todos los jugadores y todos los partidos finalizados.")
+    
+    finished_matches_all = db.query(Match).filter(Match.status == "finished").order_by(Match.date).all()
+    if finished_matches_all and all_users:
+        export_data = []
+        all_preds = db.query(Prediction).all()
+        all_preds_dict = {(p.user_id, p.match_id): p for p in all_preds}
+        
+        for u in all_users:
+            for m in finished_matches_all:
+                p = all_preds_dict.get((u.id, m.id))
+                pred_str = f"{p.pred_a}-{p.pred_b}" if p else "Vacío (0-0 automático)"
+                res_str = f"{m.result_a}-{m.result_b}"
+                puntos = p.points if p else 0
+                
+                export_data.append({
+                    "Jugador": u.username,
+                    "Partido": f"{m.team_a} vs {m.team_b}",
+                    "Su Pronóstico": pred_str,
+                    "Resultado Real": res_str,
+                    "Puntos": puntos,
+                    "Tipo de Acierto": "Exacto" if puntos == 3 else "Tendencia" if puntos == 1 else "Ninguno"
+                })
+        
+        import pandas as pd
+        df_export = pd.DataFrame(export_data)
+        csv = df_export.to_csv(index=False).encode('utf-8')
+        
+        st.download_button(
+            label="📥 Descargar Archivo CSV Completo",
+            data=csv,
+            file_name='auditoria_prode_completa.csv',
+            mime='text/csv',
+        )
+    else:
+        st.info("Para exportar, primero debe haber jugadores cargados y al menos un partido finalizado.")
+        
+    db.close()
+
 # --- FOOTER CON LINK A TÉRMINOS Y CONDICIONES ---
 def show_footer():
     st.markdown("---")
